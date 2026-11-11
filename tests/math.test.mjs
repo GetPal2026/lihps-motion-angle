@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import {orientationSample,wrap180,circularMeanDegrees,circularSpreadDegrees,relativeRotation,gravityInclinometer} from '../math.js';
+const close=(a,b,t=.01)=>assert.ok(Math.abs(a-b)<t,`${a} should approximately equal ${b}`);
+close(wrap180(27-358),29);
+close(wrap180(-179-179),2);
+close(Math.abs(circularMeanDegrees([359,1])),0);
+close(circularSpreadDegrees([359,1]),1);
+const s0=orientationSample(0,0,0), s90=orientationSample(90,0,0), s359=orientationSample(359,0,0);
+close(Math.abs(wrap180(s90.heading-s0.heading)),90);
+close(Math.abs(wrap180(s359.heading-s0.heading)),1);
+close(s0.screenTilt,0);
+close(s0.horizontalY,1);
+const tilted=orientationSample(90,10,15);
+close(tilted.screenTilt,Math.acos(Math.cos(10*Math.PI/180)*Math.cos(15*Math.PI/180))*180/Math.PI);
+close(Math.abs(wrap180(tilted.heading-s0.heading)),90); // no tilt-induced yaw bias
+const r0=relativeRotation(s0.q,s0.q);close(r0.magnitude,0);
+const r90=relativeRotation(s0.q,s90.q);close(Math.abs(r90.z),90);close(r90.magnitude,90);
+const sTilt=orientationSample(0,40,0), rTilt=relativeRotation(s0.q,sTilt.q);close(rTilt.x,40);
+close(gravityInclinometer(sTilt.gravity,'long').angle,40);
+close(gravityInclinometer(orientationSample(0,0,45).gravity,'short').angle,-45);
+const sAny=orientationSample(38,24,-18), anyR=relativeRotation(sAny.q,sAny.q);close(anyR.magnitude,0);
+console.log('All orientation, gravity, wrap-around and quaternion tests passed.');
